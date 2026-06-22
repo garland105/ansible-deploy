@@ -13,7 +13,6 @@ all:
         server:
           ansible_host: 192.168.222.128
           ansible_user: use1
-          ansible_ssh_pass: '1'
           ansible_become: true
           ansible_become_method: sudo
           ansible_become_flags: '-H -n'
@@ -26,7 +25,6 @@ all:
         vm-host:
           ansible_host: 192.168.222.129
           ansible_user: user2
-          ansible_ssh_pass: '2'
           ansible_become: true
           ansible_become_method: sudo
           ansible_become_flags: '-H -n'
