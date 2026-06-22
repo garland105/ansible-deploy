@@ -25,7 +25,7 @@ all:
       hosts:
         vm-host:
           ansible_host: 192.168.222.129
-          ansible_user: use2
+          ansible_user: user2
           ansible_ssh_pass: '2'
           ansible_become: true
           ansible_become_method: sudo
