@@ -1,0 +1,85 @@
+# ============================================================
+# roles/alertmanager/tasks/main.yml
+# Alertmanager - 告警分发服务
+# ============================================================
+
+- name: "检查 Alertmanager 是否已安装"
+  stat:
+    path: /opt/monitoring/alertmanager
+  register: am_installed
+
+- name: "下载 Alertmanager 二进制"
+  get_url:
+    url: "{{ download_mirror }}https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz"
+    dest: /tmp/alertmanager.tar.gz
+    timeout: 60
+  when: not am_installed.stat.exists
+
+- name: "解压 Alertmanager"
+  unarchive:
+    src: /tmp/alertmanager.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not am_installed.stat.exists
+
+- name: "复制二进制到 /opt/monitoring"
+  copy:
+    src: "/tmp/alertmanager-0.27.0.linux-amd64/alertmanager"
+    dest: /opt/monitoring/alertmanager
+    mode: "0755"
+    remote_src: yes
+  when: not am_installed.stat.exists
+
+- name: "清理临时文件"
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/alertmanager.tar.gz
+    - /tmp/alertmanager-0.27.0.linux-amd64
+  when: not am_installed.stat.exists
+
+- name: "创建 Alertmanager 数据目录"
+  file:
+    path: /opt/monitoring/alertmanager_data
+    state: directory
+    owner: monitor
+    group: monitor
+    mode: "0755"
+
+- name: "部署 Alertmanager 配置文件"
+  copy:
+    src: alertmanager.yml
+    dest: /opt/monitoring/alertmanager.yml
+  notify: restart alertmanager
+
+- name: "创建 Alertmanager systemd 服务"
+  copy:
+    dest: /etc/systemd/system/alertmanager.service
+    content: |
+      [Unit]
+      Description=Alertmanager
+      After=network.target
+
+      [Service]
+      User=monitor
+      ExecStart=/opt/monitoring/alertmanager \
+        --config.file=/opt/monitoring/alertmanager.yml \
+        --storage.path=/opt/monitoring/alertmanager_data \
+        --web.listen-address=:9093
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: "重新加载 systemd 并启动 Alertmanager"
+  systemd:
+    name: alertmanager
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 Alertmanager 端口就绪"
+  wait_for:
+    port: 9093
+    timeout: 15

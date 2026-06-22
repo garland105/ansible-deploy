@@ -1,0 +1,83 @@
+# ============================================================
+# roles/keepalived/tasks/main.yml
+# Keepalived - PG VIP 高可用
+# 自动检测主网卡，通过 VRRP 实现 VIP 漂移
+# ============================================================
+
+- name: "安装 Keepalived"
+  apt:
+    name: keepalived
+    state: present
+
+- name: "自动检测主网卡"
+  shell: "ip route get {{ pg_vip }} | grep -oP 'dev \\K\\S+'"
+  register: detected_interface
+  changed_when: false
+  failed_when: false
+
+- name: "设置网卡变量"
+  set_fact:
+    keepalived_interface: "{{ detected_interface.stdout if detected_interface.stdout != '' else 'eth0' }}"
+
+- name: "创建健康检查脚本（检测 PG 是否存活）"
+  copy:
+    dest: /etc/keepalived/check_pg.sh
+    content: |
+      #!/bin/bash
+      # 检查本地 PG 是否可连
+      PGPASSWORD={{ pg_admin_password }} psql -h 127.0.0.1 -U admin -d postgres -c "SELECT 1" > /dev/null 2>&1
+      exit $?
+    mode: "0755"
+
+- name: "配置 Keepalived（Leader 优先）"
+  copy:
+    dest: /etc/keepalived/keepalived.conf
+    content: |
+      global_defs {
+          router_id PG_{{ 'MASTER' if patroni_role == 'leader' else 'BACKUP' }}
+          enable_script_security
+          script_user root
+      }
+
+      vrrp_script chk_pg {
+          script "/etc/keepalived/check_pg.sh"
+          interval 3
+          timeout 3
+          fall 2
+          rise 2
+      }
+
+      vrrp_instance VI_PG {
+          state {{ 'MASTER' if patroni_role == 'leader' else 'BACKUP' }}
+          interface {{ keepalived_interface }}
+          virtual_router_id 52
+          priority {{ 150 if patroni_role == 'leader' else 100 }}
+          advert_int 1
+          authentication {
+              auth_type PASS
+              auth_pass pg_ha_vip
+          }
+          virtual_ipaddress {
+              {{ pg_vip }}/{{ pg_vip_prefix }} dev {{ keepalived_interface }}
+          }
+          track_script {
+              chk_pg
+          }
+      }
+
+- name: "启动 Keepalived"
+  systemd:
+    name: keepalived
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 VIP 绑定"
+  wait_for:
+    timeout: 5
+  when: patroni_role == 'leader'
+
+- name: "验证 VIP 是否绑定（Leader 上应有 VIP）"
+  shell: "ip a | grep {{ pg_vip }} || echo 'VIP not on this node'"
+  register: vip_check
+  changed_when: false

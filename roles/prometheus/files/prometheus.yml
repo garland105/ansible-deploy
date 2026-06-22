@@ -1,0 +1,55 @@
+# ============================================================
+# roles/prometheus/files/prometheus.yml
+# Prometheus 主配置文件（模板）
+# 使用时需将 IP 替换为实际目标机器的 IP
+# ============================================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+
+rule_files:
+  - "/opt/monitoring/alert_rules.yml"
+
+scrape_configs:
+  # Prometheus 自身指标
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter - 系统指标
+  - job_name: 'node'
+    static_configs:
+      - targets:
+          - 'localhost:9100'          # VM 自身
+          - 'PHYSICAL_IP:9100'        # ← 改为物理机 IP
+
+  # PG Exporter - 数据库指标
+  - job_name: 'postgresql'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 'localhost:9187'          # VM 的 PG Exporter
+          - 'PHYSICAL_IP:9187'        # ← 改为物理机 IP
+
+  # Blackbox Exporter - HTTP 探测
+  - job_name: 'blackbox_http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - 'http://YOUR_MONITORED_URL/'  # ← 改为你要监控的 URL
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115

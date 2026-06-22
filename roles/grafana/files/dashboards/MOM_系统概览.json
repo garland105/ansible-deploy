@@ -1,0 +1,110 @@
+{
+  "dashboard": {
+    "schemaVersion": 39,
+    "version": 1,
+    "title": "MOM 系统概览",
+    "uid": "mom-system-overview",
+    "tags": ["mom", "system", "node"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "节点在线状态",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 4},
+        "targets": [{"expr": "up{job=\"node\"}", "legendFormat": "{{instance}}"}],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+            "mappings": [{"type": "value", "value": "1", "text": "在线"}, {"type": "value", "value": "0", "text": "离线"}]
+          }
+        }
+      },
+      {
+        "title": "CPU 使用率",
+        "type": "gauge",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 4},
+        "targets": [{"expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}"}],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0, "max": 100,
+            "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 60}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}
+          }
+        }
+      },
+      {
+        "title": "内存使用率",
+        "type": "gauge",
+        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 4},
+        "targets": [{"expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "legendFormat": "{{instance}}"}],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0, "max": 100,
+            "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "orange", "value": 85}, {"color": "red", "value": 95}]}
+          }
+        }
+      },
+      {
+        "title": "CPU 使用率趋势",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {"expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}} - Total"},
+          {"expr": "avg by(instance) (irate(node_cpu_seconds_total{mode=\"iowait\"}[5m])) * 100", "legendFormat": "{{instance}} - IOWait"}
+        ],
+        "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}
+      },
+      {
+        "title": "内存使用趋势",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {"expr": "node_memory_MemTotal_bytes", "legendFormat": "{{instance}} - Total"},
+          {"expr": "node_memory_MemAvailable_bytes", "legendFormat": "{{instance}} - Available"},
+          {"expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes", "legendFormat": "{{instance}} - Used"}
+        ],
+        "fieldConfig": {"defaults": {"unit": "bytes"}}
+      },
+      {
+        "title": "磁盘使用率",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 12, "w": 6, "h": 6},
+        "targets": [{"expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\"} * 100) / node_filesystem_size_bytes{mountpoint=\"/\"})", "legendFormat": "{{instance}}"}],
+        "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "orange", "value": 85}, {"color": "red", "value": 95}]}}}
+      },
+      {
+        "title": "磁盘可用空间",
+        "type": "timeseries",
+        "gridPos": {"x": 6, "y": 12, "w": 18, "h": 6},
+        "targets": [{"expr": "node_filesystem_avail_bytes{mountpoint=\"/\"}", "legendFormat": "{{instance}}"}],
+        "fieldConfig": {"defaults": {"unit": "bytes"}}
+      },
+      {
+        "title": "网络流量",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 18, "w": 12, "h": 6},
+        "targets": [
+          {"expr": "rate(node_network_receive_bytes_total{device!=\"lo\"}[5m])", "legendFormat": "{{instance}} - RX"},
+          {"expr": "rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m])", "legendFormat": "{{instance}} - TX"}
+        ],
+        "fieldConfig": {"defaults": {"unit": "Bps"}}
+      },
+      {
+        "title": "系统负载",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 18, "w": 12, "h": 6},
+        "targets": [
+          {"expr": "node_load1", "legendFormat": "{{instance}} - 1min"},
+          {"expr": "node_load5", "legendFormat": "{{instance}} - 5min"},
+          {"expr": "node_load15", "legendFormat": "{{instance}} - 15min"}
+        ]
+      }
+    ]
+  },
+  "overwrite": true,
+  "folderUid": "",
+  "inputs": [],
+  "requires": []
+}

@@ -1,0 +1,39 @@
+# ============================================================
+# inventory.yml - 主机清单
+# 使用前将 IP 改为你的目标机器地址
+# ============================================================
+all:
+  children:
+    # --- 物理机（Leader） ---
+    physical:
+      hosts:
+        server:
+          ansible_host: 192.168.1.51   # ← 改为你的第一台机器 IP
+          ansible_user: a               # ← 改为 SSH 用户名
+          ansible_ssh_pass: 1           # ← 改为 SSH 密码
+          ansible_become: true
+          ansible_become_method: sudo
+          ansible_become_pass: 1
+
+    # --- VM（Replica / 监控中心） ---
+    vm:
+      hosts:
+        vm-host:
+          ansible_host: 192.168.1.46   # ← 改为你的第二台机器 IP
+          ansible_user: root
+          ansible_ssh_pass: 1
+          ansible_become: true
+          ansible_become_method: sudo
+          ansible_become_pass: 1
+
+    # --- PG 高可用集群节点 ---
+    pg_cluster:
+      children:
+        physical:    # 初始 Leader
+        vm:          # 初始 Replica
+
+    # --- 全部被监控的机器 ---
+    all_monitored:
+      children:
+        physical:
+        vm:

@@ -1,0 +1,29 @@
+# ============================================================
+# monitoring.yml - 全栈监控部署
+# 部署：Node Exporter + PG Exporter + Blackbox Exporter
+#       + Prometheus + Grafana + 3张 Dashboard
+# ============================================================
+- name: "部署 Exporter（全部机器）"
+  hosts: all_monitored
+  gather_facts: yes
+  roles:
+    - node_exporter
+    - pg_exporter
+
+- name: "部署 Blackbox Exporter（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - blackbox_exporter
+
+- name: "部署 Prometheus（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - prometheus
+
+- name: "部署 Grafana + 仪表盘（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - grafana

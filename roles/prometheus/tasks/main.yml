@@ -1,0 +1,99 @@
+# ============================================================
+# roles/prometheus/tasks/main.yml
+# Prometheus - 指标存储与告警评估
+# ============================================================
+
+- name: "检查 Prometheus 是否已安装"
+  stat:
+    path: /opt/monitoring/prometheus
+  register: prom_installed
+
+- name: "下载 Prometheus 二进制"
+  get_url:
+    url: "{{ download_mirror }}https://github.com/prometheus/prometheus/releases/download/v2.55.1/prometheus-2.55.1.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+    timeout: 120
+  when: not prom_installed.stat.exists
+
+- name: "解压 Prometheus"
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not prom_installed.stat.exists
+
+- name: "复制二进制到 /opt/monitoring"
+  copy:
+    src: "/tmp/prometheus-2.55.1.linux-amd64/prometheus"
+    dest: /opt/monitoring/prometheus
+    mode: "0755"
+    remote_src: yes
+  when: not prom_installed.stat.exists
+
+- name: "清理临时文件"
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/prometheus.tar.gz
+    - /tmp/prometheus-2.55.1.linux-amd64
+  when: not prom_installed.stat.exists
+
+- name: "创建 Prometheus 数据目录"
+  file:
+    path: /opt/monitoring/data
+    state: directory
+    owner: monitor
+    group: monitor
+    mode: "0755"
+
+- name: "部署 Prometheus 配置文件（动态模板）"
+  template:
+    src: prometheus.yml.j2
+    dest: /opt/monitoring/prometheus.yml
+  notify: restart prometheus
+
+- name: "部署告警规则文件"
+  copy:
+    src: alert_rules.yml
+    dest: /opt/monitoring/alert_rules.yml
+  notify: restart prometheus
+
+- name: "创建 Prometheus systemd 服务"
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      After=network.target
+
+      [Service]
+      User=monitor
+      ExecStart=/opt/monitoring/prometheus \
+        --config.file=/opt/monitoring/prometheus.yml \
+        --storage.tsdb.path=/opt/monitoring/data \
+        --storage.tsdb.retention.time={{ prometheus_retention }} \
+        --web.listen-address=:9090
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: "重新加载 systemd 并启动 Prometheus"
+  systemd:
+    name: prometheus
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 Prometheus 端口就绪"
+  wait_for:
+    port: 9090
+    timeout: 30
+
+- name: "验证 Prometheus Targets 状态"
+  uri:
+    url: http://localhost:9090/api/v1/targets
+    method: GET
+  register: targets_check
+  failed_when: false

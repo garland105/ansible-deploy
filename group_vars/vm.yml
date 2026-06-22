@@ -1,0 +1,10 @@
+# group_vars/vm.yml - VM 专用变量
+---
+vm_hostname: ubuntu-vm
+patroni_role: replica
+patroni_data_dir: /data/patroni_data
+patroni_node_name: "{{ patroni_node_name_vm }}"
+mom_base: /opt/mom_program
+etcd_host: "{{ ansible_host }}:2379"    # etcd 只在 VM 上运行
+# Keepalived 用
+# keepalived_interface: "ens33"

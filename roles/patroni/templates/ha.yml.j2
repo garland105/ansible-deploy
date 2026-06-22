@@ -1,0 +1,64 @@
+# ============================================================
+# Patroni 配置文件模板 (ha.yml.j2)
+# 适配 Leader / Replica 两种角色
+# ============================================================
+scope: {{ patroni_scope }}
+name: {{ patroni_node_name }}
+
+etcd:
+  host: {{ hostvars[groups['vm'][0]]['ansible_host'] }}:2379
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: {{ ansible_host }}:8008
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        listen_addresses: '*'
+        wal_level: replica
+        hot_standby: 'on'
+        wal_keep_size: 256
+        max_wal_senders: 10
+        max_replication_slots: 10
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - host all all 0.0.0.0/0 scram-sha-256
+    - host replication repl_user 0.0.0.0/0 scram-sha-256
+  users:
+    admin:
+      password: {{ pg_admin_password }}
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: {{ ansible_host }}:5432
+  data_dir: {{ patroni_data_dir }}
+  bin_dir: /usr/lib/postgresql/16/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: repl_user
+      password: {{ pg_repl_password }}
+    superuser:
+      username: admin
+      password: {{ pg_admin_password }}
+    rewind:
+      username: admin
+      password: {{ pg_admin_password }}
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

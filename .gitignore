@@ -1,0 +1,20 @@
+# 密码和密钥文件
+*.secret
+*.key
+*.cert
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时和构建文件
+*.tar.gz
+*.log
+*.tmp
+/tmp/

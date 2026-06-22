@@ -1,0 +1,72 @@
+# ============================================================
+# roles/prometheus/templates/prometheus.yml.j2
+# Prometheus 主配置文件 - 使用 Ansible 变量动态填充 IP
+# ============================================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+
+rule_files:
+  - "/opt/monitoring/alert_rules.yml"
+
+scrape_configs:
+  # Prometheus 自身指标
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter - 系统指标
+  - job_name: 'node'
+    static_configs:
+      - targets:
+          - 'localhost:9100'
+{% for host in groups['all_monitored'] %}
+{%   set h = hostvars[host] %}
+{%   if h.physical_ip is defined %}
+          - '{{ h.physical_ip }}:9100'
+{%   elif h.ansible_default_ipv4 is defined and h.ansible_default_ipv4.address != '127.0.0.1' %}
+          - '{{ h.ansible_default_ipv4.address }}:9100'
+{%   else %}
+          - '{{ h.ansible_host }}:9100'
+{%   endif %}
+{% endfor %}
+
+  # PG Exporter - 数据库指标
+  - job_name: 'postgresql'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+{% for host in groups['all_monitored'] %}
+{%   set h = hostvars[host] %}
+{%   if h.physical_ip is defined %}
+          - '{{ h.physical_ip }}:9187'
+{%   elif h.ansible_default_ipv4 is defined and h.ansible_default_ipv4.address != '127.0.0.1' %}
+          - '{{ h.ansible_default_ipv4.address }}:9187'
+{%   else %}
+          - '{{ h.ansible_host }}:9187'
+{%   endif %}
+{% endfor %}
+
+  # Blackbox Exporter - HTTP 探测（监控任意 Web 服务）
+  # 使用前将 target 改为你要监控的 URL
+  - job_name: 'blackbox_http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - 'http://{{ pg_vip }}:5432/'   # 监控 PG VIP 的 5432 端口
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115

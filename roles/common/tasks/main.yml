@@ -1,0 +1,83 @@
+# ============================================================
+# roles/common/tasks/main.yml
+# 系统初始化：apt源、时区、hostname、SSH配置、防火墙
+# ============================================================
+
+- name: "设置时区为 Asia/Shanghai"
+  timezone:
+    name: "{{ timezone }}"
+  when: timezone is defined
+
+- name: "设置主机名"
+  hostname:
+    name: "{{ physical_hostname if 'physical' in group_names else vm_hostname }}"
+
+- name: "更新 apt 缓存"
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: "安装常用系统工具"
+  apt:
+    name:
+      - curl
+      - wget
+      - vim
+      - htop
+      - net-tools
+      - lsof
+      - jq
+    state: present
+
+- name: "配置 SSH 保持连接（防超时断开）"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} {{ item.value }}"
+    state: present
+  loop:
+    - { key: "ClientAliveInterval", value: "30" }
+    - { key: "ClientAliveCountMax", value: "3" }
+    - { key: "LoginGraceTime", value: "600" }
+  notify: restart sshd
+
+- name: "确保 PermitRootLogin 为 yes（VM 用 root 登录）"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PermitRootLogin"
+    line: "PermitRootLogin yes"
+    state: present
+  when: "'vm' in group_names"
+  notify: restart sshd
+
+- name: "确保 /etc/hosts 包含主机名解析"
+  lineinfile:
+    path: /etc/hosts
+    regexp: "127.0.1.1\\s+{{ ansible_hostname }}"
+    line: "127.0.1.1 {{ ansible_hostname }}"
+    state: present
+
+- name: "关闭 swap（PG 建议）"
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+  ignore_errors: yes
+
+- name: "注释 fstab 中的 swap 条目"
+  replace:
+    path: /etc/fstab
+    regexp: "^([^#].*swap.*)"
+    replace: "# \\1"
+  when: ansible_swaptotal_mb > 0
+  ignore_errors: yes
+
+- name: "内核参数优化（PG 推荐）"
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { key: vm.swappiness, value: "1" }
+    - { key: vm.dirty_ratio, value: "10" }
+    - { key: vm.dirty_background_ratio, value: "3" }
+    - { key: kernel.sem, value: "250 32000 100 128" }

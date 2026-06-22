@@ -1,0 +1,55 @@
+# ============================================================
+# roles/dingtalk/tasks/main.yml
+# DingTalk Webhook Bridge - Alertmanager → 钉钉群消息转发
+# ============================================================
+
+- name: "创建 dingtalk 脚本目录"
+  file:
+    path: /opt/monitoring
+    state: directory
+    mode: "0755"
+
+- name: "部署 DingTalk Webhook 脚本"
+  copy:
+    src: dingtalk_webhook.py
+    dest: /opt/monitoring/dingtalk_webhook.py
+    mode: "0755"
+
+- name: "创建 DingTalk systemd 服务"
+  copy:
+    dest: /etc/systemd/system/dingtalk-webhook.service
+    content: |
+      [Unit]
+      Description=DingTalk Webhook Bridge
+      After=network.target
+
+      [Service]
+      Type=simple
+      Environment=DINGTALK_TOKEN={{ dingtalk_token }}
+      ExecStart=/usr/bin/python3 /opt/monitoring/dingtalk_webhook.py
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: "启动 DingTalk 服务"
+  systemd:
+    name: dingtalk-webhook
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 DingTalk 端口就绪"
+  wait_for:
+    port: 8060
+    timeout: 10
+
+- name: "验证 DingTalk 服务"
+  uri:
+    url: http://localhost:8060/
+    method: POST
+    body_format: json
+    body: '{"status":"firing","alerts":[]}'
+  register: dingtalk_test
+  failed_when: false

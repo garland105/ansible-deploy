@@ -1,0 +1,81 @@
+# ============================================================
+# roles/blackbox_exporter/tasks/main.yml
+# Blackbox Exporter - HTTP 探测（检查 Web 服务是否在线）
+# ============================================================
+
+- name: "检查 Blackbox Exporter 是否已安装"
+  stat:
+    path: /opt/monitoring/blackbox_exporter
+  register: bb_installed
+
+- name: "下载 Blackbox Exporter 二进制"
+  get_url:
+    url: "{{ download_mirror }}https://github.com/prometheus/blackbox_exporter/releases/download/v0.25.0/blackbox_exporter-0.25.0.linux-amd64.tar.gz"
+    dest: /tmp/blackbox_exporter.tar.gz
+    timeout: 60
+  when: not bb_installed.stat.exists
+
+- name: "解压并安装 Blackbox Exporter"
+  unarchive:
+    src: /tmp/blackbox_exporter.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not bb_installed.stat.exists
+
+- name: "复制二进制到 /opt/monitoring"
+  copy:
+    src: "/tmp/blackbox_exporter-0.25.0.linux-amd64/blackbox_exporter"
+    dest: /opt/monitoring/blackbox_exporter
+    mode: "0755"
+    remote_src: yes
+  when: not bb_installed.stat.exists
+
+- name: "清理临时文件"
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/blackbox_exporter.tar.gz
+    - /tmp/blackbox_exporter-0.25.0.linux-amd64
+  when: not bb_installed.stat.exists
+
+- name: "创建 Blackbox 配置文件"
+  copy:
+    dest: /opt/monitoring/blackbox.yml
+    content: |
+      modules:
+        http_2xx:
+          prober: http
+          timeout: 10s
+          http:
+            valid_status_codes: [200]
+            method: GET
+            no_follow_redirects: false
+
+- name: "创建 Blackbox Exporter systemd 服务"
+  copy:
+    dest: /etc/systemd/system/blackbox_exporter.service
+    content: |
+      [Unit]
+      Description=Blackbox Exporter
+      After=network.target
+
+      [Service]
+      User=monitor
+      ExecStart=/opt/monitoring/blackbox_exporter --config.file=/opt/monitoring/blackbox.yml --web.listen-address=:9115
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: "重新加载 systemd 并启动 Blackbox Exporter"
+  systemd:
+    name: blackbox_exporter
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 Blackbox Exporter 端口就绪"
+  wait_for:
+    port: 9115
+    timeout: 15

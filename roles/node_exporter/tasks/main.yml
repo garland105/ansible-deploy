@@ -1,0 +1,92 @@
+# ============================================================
+# roles/node_exporter/tasks/main.yml
+# Node Exporter - 系统指标采集（CPU/内存/磁盘）
+# 安装方式：直接下载二进制到 /opt/monitoring 或 apt
+# ============================================================
+
+- name: "检查 Node Exporter 是否已安装"
+  stat:
+    path: /opt/monitoring/node_exporter
+  register: ne_installed
+
+- name: "创建监控目录"
+  file:
+    path: /opt/monitoring
+    state: directory
+    mode: "0755"
+  when: not ne_installed.stat.exists
+
+- name: "下载 Node Exporter 二进制"
+  get_url:
+    url: "{{ download_mirror }}https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz"
+    dest: /tmp/node_exporter.tar.gz
+    timeout: 60
+  when: not ne_installed.stat.exists
+
+- name: "解压并安装 Node Exporter"
+  unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not ne_installed.stat.exists
+
+- name: "复制二进制到 /opt/monitoring"
+  copy:
+    src: "/tmp/node_exporter-1.8.2.linux-amd64/node_exporter"
+    dest: /opt/monitoring/node_exporter
+    mode: "0755"
+    remote_src: yes
+  when: not ne_installed.stat.exists
+
+- name: "清理临时文件"
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/node_exporter.tar.gz
+    - /tmp/node_exporter-1.8.2.linux-amd64
+  when: not ne_installed.stat.exists
+
+- name: "创建 monitor 用户"
+  user:
+    name: monitor
+    system: yes
+    shell: /bin/false
+    create_home: no
+  when: not ne_installed.stat.exists
+
+- name: "设置 /opt/monitoring 权限"
+  file:
+    path: /opt/monitoring
+    owner: monitor
+    group: monitor
+    recurse: yes
+
+- name: "创建 Node Exporter systemd 服务"
+  copy:
+    dest: /etc/systemd/system/node_exporter.service
+    content: |
+      [Unit]
+      Description=Node Exporter
+      After=network.target
+
+      [Service]
+      User=monitor
+      ExecStart=/opt/monitoring/node_exporter --web.listen-address=:9100
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+  when: not ne_installed.stat.exists
+
+- name: "重新加载 systemd 并启动 Node Exporter"
+  systemd:
+    name: node_exporter
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 Node Exporter 端口就绪"
+  wait_for:
+    port: 9100
+    timeout: 15

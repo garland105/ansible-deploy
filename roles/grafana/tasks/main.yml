@@ -1,0 +1,96 @@
+# ============================================================
+# roles/grafana/tasks/main.yml
+# Grafana - 可视化仪表盘（11.5.1）
+# 自动配置 Prometheus 数据源 + 3 张 Dashboard 预导入
+# ============================================================
+
+- name: "检查 Grafana 是否已安装"
+  stat:
+    path: /usr/sbin/grafana-server
+  register: graf_installed
+
+- name: "下载 Grafana 11.5.1 deb 包（清华镜像）"
+  get_url:
+    url: "{{ download_mirror }}https://mirrors.tuna.tsinghua.edu.cn/grafana/apt/pool/main/g/grafana/grafana_11.5.1_amd64.deb"
+    dest: /tmp/grafana.deb
+    timeout: 120
+  when: not graf_installed.stat.exists
+
+- name: "安装 Grafana"
+  apt:
+    deb: /tmp/grafana.deb
+  when: not graf_installed.stat.exists
+
+- name: "清理 deb 包"
+  file:
+    path: /tmp/grafana.deb
+    state: absent
+  when: not graf_installed.stat.exists
+
+- name: "创建 Grafana provisioning 配置目录"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /etc/grafana/provisioning/datasources
+    - /etc/grafana/provisioning/dashboards
+    - /opt/monitoring/config/dashboards
+
+- name: "配置 Prometheus 数据源（自动配置）"
+  copy:
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://localhost:9090
+          isDefault: true
+          editable: false
+
+- name: "配置 Dashboard 自动加载"
+  copy:
+    dest: /etc/grafana/provisioning/dashboards/dashboards.yml
+    content: |
+      apiVersion: 1
+      providers:
+        - name: MOM
+          orgId: 1
+          folder: 'MOM'
+          type: file
+          disableDeletion: true
+          editable: true
+          options:
+            path: /opt/monitoring/config/dashboards
+
+- name: "复制 3 张 Dashboard JSON 到 Grafana"
+  copy:
+    src: dashboards/
+    dest: /opt/monitoring/config/dashboards/
+    mode: "0644"
+
+- name: "设置 Grafana 管理员密码"
+  command: >
+    grafana-cli admin reset-admin-password {{ grafana_admin_password }}
+  ignore_errors: yes
+
+- name: "启动 Grafana 服务"
+  systemd:
+    name: grafana-server
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "等待 Grafana 端口就绪"
+  wait_for:
+    port: "{{ grafana_port }}"
+    timeout: 45
+
+- name: "验证 Grafana 健康状态"
+  uri:
+    url: "http://localhost:{{ grafana_port }}/api/health"
+    method: GET
+  register: graf_health
+  failed_when: graf_health.status != 200

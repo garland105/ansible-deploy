@@ -1,0 +1,9 @@
+# group_vars/physical.yml - 物理机专用变量
+---
+physical_hostname: server
+patroni_role: leader
+patroni_data_dir: /var/lib/postgresql/16/main
+patroni_node_name: "{{ patroni_node_name_physical }}"
+mom_base: /home/a/mom_deploy/mom_program
+# Keepalived 用 - 部署时自动检测，如果检测失败可手动指定
+# keepalived_interface: "wlx90de8037406f"

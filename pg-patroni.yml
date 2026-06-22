@@ -1,0 +1,24 @@
+# ============================================================
+# pg-patroni.yml - PG16 高可用集群部署
+# 步骤：
+#   1. 所有机器装 PG16
+#   2. VM 装 etcd（Patroni 的 DCS）
+#   3. 所有机器装 Patroni（Leader / Replica 自动配置）
+# ============================================================
+- name: "阶段 1 - 安装 PostgreSQL 16（全部机器）"
+  hosts: all_monitored
+  gather_facts: yes
+  roles:
+    - postgres
+
+- name: "阶段 2 - 部署 etcd（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - etcd
+
+- name: "阶段 3 - 部署 Patroni（全部机器）"
+  hosts: pg_cluster
+  gather_facts: yes
+  roles:
+    - patroni

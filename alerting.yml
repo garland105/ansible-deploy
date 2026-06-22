@@ -1,0 +1,21 @@
+# ============================================================
+# alerting.yml - 告警与高可用
+# 部署：Alertmanager + DingTalk Webhook + Keepalived PG VIP
+# ============================================================
+- name: "部署 Alertmanager（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - alertmanager
+
+- name: "部署 DingTalk Webhook（仅 VM）"
+  hosts: vm
+  gather_facts: yes
+  roles:
+    - dingtalk
+
+- name: "部署 Keepalived PG VIP（全部机器）"
+  hosts: all_monitored
+  gather_facts: yes
+  roles:
+    - keepalived

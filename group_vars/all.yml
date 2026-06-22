@@ -1,0 +1,38 @@
+# ============================================================
+# group_vars/all.yml - 全局变量
+# 部署前修改此处密码和 token 即可
+# ============================================================
+
+# --- PostgreSQL 凭证 ---
+pg_admin_password: admin_pass      # PG 超级用户（Patroni 使用）
+pg_repl_password: repl_pass        # PG 复制用户（流复制使用）
+monitor_password: monitor          # PG 监控用户（PG Exporter 使用）
+postgres_password: 1               # postgres 系统用户密码
+
+# --- Grafana ---
+grafana_admin_password: admin123   # Grafana 管理员密码
+
+# --- PG VIP（Keepalived 使用） ---
+pg_vip: 192.168.1.200              # PG 虚拟 IP
+pg_vip_prefix: 24                  # VIP 子网掩码位数
+
+# --- 网络接口（部署时自动检测，如果检测失败则用此默认值） ---
+physical_interface: ""             # 留空则自动检测默认路由接口
+vm_interface: ""
+
+# --- 钉钉告警 ---
+dingtalk_token: ""                 # 钉钉机器人 token，留空则不配置告警通知
+dingtalk_enabled: false            # 钉钉告警开关
+
+# --- 监控栈 ---
+download_mirror: "https://ghp.ci/"   # GitHub 下载加速镜像（国内用 ghp.ci）
+prometheus_retention: 30d          # Prometheus 数据保留天数
+grafana_port: 3000                 # Grafana 监听端口
+
+# --- 节点标识 ---
+patroni_scope: pg_ha               # Patroni 集群名称
+patroni_node_name_physical: server
+patroni_node_name_vm: vm-standby
+
+# --- 时区 ---
+timezone: Asia/Shanghai

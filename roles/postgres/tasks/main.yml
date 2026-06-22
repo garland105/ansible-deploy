@@ -1,0 +1,70 @@
+# ============================================================
+# roles/postgres/tasks/main.yml
+# PostgreSQL 16 - 安装与基础配置
+# ============================================================
+
+- name: "检查 PG 是否已安装"
+  command: psql --version
+  register: pg_installed
+  failed_when: false
+  changed_when: false
+
+- name: "安装 PostgreSQL 16"
+  apt:
+    name: postgresql-16
+    state: present
+  when: pg_installed.rc != 0
+
+- name: "确保 PG 运行"
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: "设置 postgres 用户密码"
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: postgres
+    password: "{{ postgres_password }}"
+  when: pg_installed.rc != 0
+
+- name: "配置 listen_addresses = '*'"
+  lineinfile:
+    path: /etc/postgresql/16/main/postgresql.conf
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '*'"
+  notify: restart postgresql
+
+- name: "配置 pg_hba.conf（允许内网访问）"
+  lineinfile:
+    path: /etc/postgresql/16/main/pg_hba.conf
+    regexp: "^host\\s+all\\s+all\\s+{{ item }}"
+    line: "host    all             all             {{ item }}             scram-sha-256"
+    insertafter: "^# IPv4 local connections:"
+  loop:
+    - "192.168.0.0/16"
+    - "127.0.0.1/32"
+  notify: restart postgresql
+
+- name: "创建监控用户 monitor"
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: monitor
+    password: "{{ monitor_password }}"
+    role_attr_flags: LOGIN
+  when: pg_installed.rc != 0
+
+- name: "授予 monitor pg_monitor 角色"
+  become: yes
+  become_user: postgres
+  postgresql_membership:
+    group: pg_monitor
+    target: monitor
+  ignore_errors: yes
+
+- name: "确认 PG 监听端口"
+  wait_for:
+    port: 5432
+    timeout: 10
