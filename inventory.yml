@@ -16,7 +16,6 @@ all:
           ansible_ssh_pass: '1'
           ansible_become: true
           ansible_become_method: sudo
-          ansible_become_pass: '1'
           # 手工指定物理 IP（Prometheus 模板用，避免 NAT 下解析到 127.0.0.1）
           physical_ip: 192.168.222.128
 
@@ -29,7 +28,6 @@ all:
           ansible_ssh_pass: '2'
           ansible_become: true
           ansible_become_method: sudo
-          ansible_become_pass: '2'
 
     # --- PG 集群（流复制组） ---
     pg_cluster:
