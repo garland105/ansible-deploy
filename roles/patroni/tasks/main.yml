@@ -4,7 +4,7 @@
 # 全部使用 apt 安装（Ubuntu 24.04 自带 Patroni 3.2.2）
 # ============================================================
 
-# --- 第一步：安装 Patroni（两台都用 apt） ---
+# --- 第一步：安装 Patroni ---
 - name: "检查 Patroni 是否已安装"
   command: which patroni
   register: pat_installed
@@ -17,15 +17,40 @@
     state: present
   when: pat_installed.rc != 0
 
-# --- 第二步：创建 PG 用户（admin / repl_user）---
-- name: "创建 admin 超级用户"
+# --- 第二步：清理旧集群状态 ---
+# 如果 etcd 中存在旧集群数据（系统ID不匹配），Patroni 会启动失败
+# 必须在首次启动前清理干净
+- name: "检查 etcd 中是否有旧集群数据"
+  uri:
+    url: "http://{{ hostvars[groups['vm'][0]].get('ansible_host') or hostvars[groups['vm'][0]]['ansible_default_ipv4']['address'] }}:2379/v2/keys/service/{{ patroni_scope }}"
+    method: GET
+  register: etcd_cluster_check
+  failed_when: false
+  ignore_errors: yes
+  run_once: yes
+
+- name: "清理 etcd 中的旧集群数据（降低 TTL 让旧数据过期）"
+  uri:
+    url: "http://{{ hostvars[groups['vm'][0]].get('ansible_host') or hostvars[groups['vm'][0]]['ansible_default_ipv4']['address'] }}:2379/v2/keys/service/{{ patroni_scope }}?recursive=true"
+    method: DELETE
+  when: etcd_cluster_check.status == 200
+  run_once: yes
+  ignore_errors: yes
+
+# --- 第三步：创建 PG 用户（admin / repl_user）---
+# 注：必须先通过手动 initdb 创建 PG 实例，否则 postgresql_user 模块无数据库可连
+# 由于 Patroni 将接管 PG 实例管理，这些用户在 Patroni 的 bootstrap.users 中定义
+# 此处的创建操作针对第一次安装时系统 PG 服务还运行时进行
+- name: "创建 admin 超级用户（如果在系统 PG 上）"
   become: yes
   become_user: postgres
   postgresql_user:
     name: admin
     password: "{{ pg_admin_password }}"
     role_attr_flags: SUPERUSER,LOGIN,CREATEDB,CREATEROLE
-  # 无条件执行，idempotent
+  register: admin_user_created
+  failed_when: false
+  # 如果系统 PG 未运行（已被 Patroni 接管），这个任务会报错但不影响
 
 - name: "创建 repl_user 复制用户"
   become: yes
@@ -34,8 +59,25 @@
     name: repl_user
     password: "{{ pg_repl_password }}"
     role_attr_flags: LOGIN,REPLICATION
+  failed_when: false
 
-# --- 第三步：配置 Patroni ---
+# --- 第四步：准备数据目录 ---
+- name: "确保 PG 数据目录存在且属主为 postgres"
+  file:
+    path: "{{ patroni_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0700"
+
+- name: "停用原 PG systemd 服务（Patroni 接管）"
+  systemd:
+    name: postgresql
+    state: stopped
+    enabled: no
+  failed_when: false
+
+# --- 第五步：配置 Patroni ---
 - name: "创建 /etc/patroni 目录"
   file:
     path: /etc/patroni
@@ -48,18 +90,7 @@
     dest: /etc/patroni/ha.yml
   notify: restart patroni
 
-# --- 第四步：创建并启动 systemd 服务 ---
-- name: "停用原 PG systemd 服务（Patroni 接管）"
-  systemd:
-    name: postgresql
-    state: stopped
-    enabled: no
-
-- name: "确保 PG 数据目录有 conf.d"
-  file:
-    path: "{{ patroni_data_dir }}/conf.d"
-    state: directory
-
+# --- 第六步：创建并启动 systemd 服务 ---
 - name: "创建 Patroni systemd 服务"
   copy:
     dest: /etc/systemd/system/patroni.service
@@ -87,15 +118,15 @@
     enabled: yes
     daemon_reload: yes
 
-- name: "等待 Patroni 就绪（PG 端口 5432）"
+- name: "等待 Patroni 就绪（PG 端口 5432）- 最长 120 秒"
   wait_for:
     port: 5432
-    timeout: 60
-    delay: 10
+    timeout: 120
+    delay: 5
 
 - name: "验证 Patroni 集群状态"
   command: patronictl -c /etc/patroni/ha.yml list
   register: pat_status
   changed_when: false
-  retries: 5
-  delay: 3
+  retries: 3
+  delay: 5

@@ -43,15 +43,17 @@
     line: "listen_addresses = '*'"
   notify: restart postgresql
 
-- name: "配置 pg_hba.conf（允许内网访问）"
+- name: "配置 pg_hba.conf（允许内网访问 + 复制）"
   lineinfile:
     path: /etc/postgresql/16/main/pg_hba.conf
-    regexp: "^host\\s+all\\s+all\\s+{{ item }}"
-    line: "host    all             all             {{ item }}             scram-sha-256"
+    regexp: "^host\\s+{{ item.type }}\\s+{{ item.user }}\\s+{{ item.net }}"
+    line: "host    {{ item.type }}        {{ item.user }}        {{ item.net }}             scram-sha-256"
     insertafter: "^# IPv4 local connections:"
   loop:
-    - "192.168.0.0/16"
-    - "127.0.0.1/32"
+    - { type: 'all', user: 'all', net: '192.168.0.0/16' }
+    - { type: 'all', user: 'all', net: '127.0.0.1/32' }
+    - { type: 'replication', user: 'repl_user', net: '192.168.0.0/16' }
+    - { type: 'replication', user: 'repl_user', net: '127.0.0.1/32' }
   notify: restart postgresql
 
 - name: "创建监控用户 monitor"
