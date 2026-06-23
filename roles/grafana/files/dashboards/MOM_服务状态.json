@@ -1,102 +1,275 @@
 {
-  "dashboard": {
-    "schemaVersion": 39,
-    "version": 1,
-    "title": "MOM 服务状态",
-    "uid": "mom-service-status",
-    "tags": ["mom", "service", "blackbox"],
-    "timezone": "browser",
-    "refresh": "15s",
-    "panels": [
-      {
-        "title": "MOM 主服务状态",
-        "type": "stat",
-        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
-        "targets": [{"expr": "probe_success{job=\"blackbox_http\"}", "legendFormat": "{{instance}}"}],
-        "fieldConfig": {
-          "defaults": {
-            "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
-            "mappings": [{"type": "value", "value": "1", "text": "正常"}, {"type": "value", "value": "0", "text": "异常"}]
-          }
+  "schemaVersion": 39,
+  "version": 1,
+  "title": "MOM 服务状态",
+  "uid": "mom-service-status",
+  "tags": [
+    "mom",
+    "service",
+    "blackbox"
+  ],
+  "timezone": "browser",
+  "refresh": "15s",
+  "panels": [
+    {
+      "title": "MOM 主服务状态",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "probe_success{job=\"blackbox_http\"}",
+          "legendFormat": "{{instance}}"
         }
-      },
-      {
-        "title": "MOM 响应时间",
-        "type": "gauge",
-        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
-        "targets": [{"expr": "probe_duration_seconds{job=\"blackbox_http\"}", "legendFormat": "{{instance}}"}],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "s",
-            "min": 0, "max": 5,
-            "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "orange", "value": 2}, {"color": "red", "value": 3}]}
-          }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "value": "1",
+              "text": "正常"
+            },
+            {
+              "type": "value",
+              "value": "0",
+              "text": "异常"
+            }
+          ]
         }
-      },
-      {
-        "title": "24 小时可用率",
-        "type": "stat",
-        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
-        "targets": [{"expr": "avg_over_time(probe_success{job=\"blackbox_http\"}[24h]) * 100"}],
-        "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2}}
-      },
-      {
-        "title": "Prometheus 抓取目标健康",
-        "type": "stat",
-        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
-        "targets": [{"expr": "count(up == 1)", "legendFormat": "在线"}, {"expr": "count(up == 0) or vector(0)", "legendFormat": "离线"}],
-        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}}
-      },
-      {
-        "title": "MOM 响应时间趋势",
-        "type": "timeseries",
-        "gridPos": {"x": 0, "y": 4, "w": 12, "h": 7},
-        "targets": [
-          {"expr": "probe_duration_seconds{job=\"blackbox_http\"}", "legendFormat": "{{instance}} - Response Time"}
-        ],
-        "fieldConfig": {"defaults": {"unit": "s"}}
-      },
-      {
-        "title": "HTTP 状态码分布",
-        "type": "timeseries",
-        "gridPos": {"x": 12, "y": 4, "w": 12, "h": 7},
-        "targets": [
-          {"expr": "probe_http_status_code{job=\"blackbox_http\"}", "legendFormat": "{{instance}}"}
-        ]
-      },
-      {
-        "title": "所有抓取目标状态",
-        "type": "table",
-        "gridPos": {"x": 0, "y": 11, "w": 24, "h": 7},
-        "targets": [
-          {"expr": "up", "format": "table", "instant": true}
-        ],
-        "transformations": [
-          {"id": "organize", "options": {"renameByName": {"up": "状态", "instance": "实例", "job": "类型"}, "excludeByName": {"__name__": true}}}
-        ]
-      },
-      {
-        "title": "MOM 可用率趋势 (小时级)",
-        "type": "timeseries",
-        "gridPos": {"x": 0, "y": 18, "w": 12, "h": 6},
-        "targets": [
-          {"expr": "avg_over_time(probe_success{job=\"blackbox_http\"}[1h]) * 100", "legendFormat": "{{instance}} - 可用率"}
-        ],
-        "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}
-      },
-      {
-        "title": "TLS / SSL 证书过期时间",
-        "type": "timeseries",
-        "gridPos": {"x": 12, "y": 18, "w": 12, "h": 6},
-        "targets": [
-          {"expr": "probe_ssl_earliest_cert_expiry{job=\"blackbox_http\"}", "legendFormat": "{{instance}}"}
-        ],
-        "fieldConfig": {"defaults": {"unit": "s"}}
       }
-    ]
-  },
-  "overwrite": true,
-  "folderUid": "",
-  "inputs": [],
-  "requires": []
+    },
+    {
+      "title": "MOM 响应时间",
+      "type": "gauge",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{job=\"blackbox_http\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "max": 5,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "24 小时可用率",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{job=\"blackbox_http\"}[24h]) * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2
+        }
+      }
+    },
+    {
+      "title": "Prometheus 抓取目标健康",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "在线"
+        },
+        {
+          "expr": "count(up == 0) or vector(0)",
+          "legendFormat": "离线"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "MOM 响应时间趋势",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{job=\"blackbox_http\"}",
+          "legendFormat": "{{instance}} - Response Time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "HTTP 状态码分布",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "probe_http_status_code{job=\"blackbox_http\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "所有抓取目标状态",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "up",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "up": "状态",
+              "instance": "实例",
+              "job": "类型"
+            },
+            "excludeByName": {
+              "__name__": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "MOM 可用率趋势 (小时级)",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{job=\"blackbox_http\"}[1h]) * 100",
+          "legendFormat": "{{instance}} - 可用率"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "TLS / SSL 证书过期时间",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 12,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "probe_ssl_earliest_cert_expiry{job=\"blackbox_http\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    }
+  ]
 }
