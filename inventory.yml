@@ -12,13 +12,9 @@ all:
       hosts:
         server:
           ansible_host: 192.168.222.128
-          ansible_user: use1
-          ansible_become: true
-          ansible_become_method: sudo
-          ansible_become_flags: '-H -S'
-          ansible_become_password: ''
-          ansible_ssh_common_args: '-o ControlMaster=no -o ControlPath=none'
-          # 手工指定物理 IP（Prometheus 模板用，避免 NAT 下解析到 127.0.0.1）
+          ansible_user: root
+          # 直接 root 登录，无需 become
+          # 手工指定物理 IP（Prometheus 模板用）
           physical_ip: 192.168.222.128
 
     # --- PG Replica + 监控中心（VM - 控制节点，本地执行） ---
