@@ -39,6 +39,10 @@ bootstrap:
       options:
         - createrole
         - createdb
+    monitor:
+      password: {{ monitor_password }}
+      options:
+        - login
 
 postgresql:
   listen: 0.0.0.0:5432

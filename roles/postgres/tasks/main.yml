@@ -28,13 +28,19 @@
     state: started
     enabled: yes
 
-- name: "设置 postgres 用户密码"
+- name: "检查 Patroni 是否运行中（影响 PG 管理）"
+  command: systemctl is-active patroni
+  register: patroni_active
+  failed_when: false
+  changed_when: false
+
+- name: "设置 postgres 用户密码（仅在系统 PG 运行时）"
   become: yes
   become_user: postgres
   postgresql_user:
     name: postgres
     password: "{{ postgres_password }}"
-  when: pg_installed.rc != 0
+  when: pg_installed.rc != 0 and patroni_active.rc != 0
 
 - name: "配置 listen_addresses = '*'"
   lineinfile:
@@ -56,20 +62,22 @@
     - { type: 'replication', user: 'repl_user', net: '127.0.0.1/32' }
   notify: restart postgresql
 
-- name: "创建监控用户 monitor"
+- name: "创建监控用户 monitor（仅在系统 PG 运行时）"
   become: yes
   become_user: postgres
   postgresql_user:
     name: monitor
     password: "{{ monitor_password }}"
     role_attr_flags: LOGIN
+  when: patroni_active.rc != 0
 
-- name: "授予 monitor pg_monitor 角色"
+- name: "授予 monitor pg_monitor 角色（仅在系统 PG 运行时）"
   become: yes
   become_user: postgres
   postgresql_membership:
     target_role: monitor
     groups: pg_monitor
+  when: patroni_active.rc != 0
   ignore_errors: yes
 
 - name: "确认 PG 监听端口"
