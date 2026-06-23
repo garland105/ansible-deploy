@@ -5,7 +5,7 @@
 # ============================================================
 
 - name: "检查 etcd 是否已安装"
-  command: which etcd
+  command: snap list etcd
   register: etcd_installed
   failed_when: false
   changed_when: false
@@ -18,20 +18,33 @@
   command: snap list etcd
   register: etcd_version
   changed_when: false
-  when: etcd_installed.rc != 0
+
+- name: "确保 etcd 配置文件目录存在"
+  file:
+    path: /var/snap/etcd/common
+    state: directory
+    mode: '0755'
+
+- name: "复制 etcd 配置文件（从 sample）"
+  copy:
+    src: /var/snap/etcd/current/etcd.conf.yml.sample
+    dest: /var/snap/etcd/common/etcd.conf.yml
+    remote_src: yes
+    force: no
 
 - name: "开启 etcd v2 API（Patroni 需要）"
   lineinfile:
     path: /var/snap/etcd/common/etcd.conf.yml
+    regexp: "^#?enable-v2"
     line: "enable-v2: true"
     state: present
   notify: restart etcd
 
-- name: "重启 etcd 使配置生效"
+- name: "确保 etcd snap 服务已启动"
   systemd:
     name: snap.etcd.etcd
-    state: restarted
-  when: etcd_installed.rc != 0
+    state: started
+    enabled: yes
 
 - name: "验证 etcd v2 API 可用"
   uri:
@@ -39,8 +52,10 @@
     method: GET
   register: etcd_test
   failed_when: etcd_test.status != 200
+  retries: 5
+  delay: 2
 
 - name: "等待 etcd 端口"
   wait_for:
     port: 2379
-    timeout: 10
+    timeout: 15
