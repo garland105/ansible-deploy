@@ -11,12 +11,16 @@
 
 - name: "安装 PostgreSQL 16"
   apt:
+    name: postgresql-16
+    state: present
+  when: pg_installed.rc != 0
+
+- name: "安装 Python 依赖（psycopg2 + acl）"
+  apt:
     name:
-      - postgresql-16
       - python3-psycopg2
       - acl
     state: present
-  when: pg_installed.rc != 0
 
 - name: "确保 PG 运行"
   systemd:
