@@ -50,12 +50,12 @@
       vrrp_instance VI_PG {
           state {{ 'MASTER' if patroni_role == 'leader' else 'BACKUP' }}
           interface {{ keepalived_interface }}
-          virtual_router_id 52
+          virtual_router_id {{ keepalived_vrrp_id | default(52) }}
           priority {{ 150 if patroni_role == 'leader' else 100 }}
           advert_int 1
           authentication {
               auth_type PASS
-              auth_pass pg_ha_vip
+              auth_pass {{ keepalived_vrrp_pass | default('pg_ha_vip') }}
           }
           virtual_ipaddress {
               {{ pg_vip }}/{{ pg_vip_prefix }} dev {{ keepalived_interface }}

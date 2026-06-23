@@ -56,9 +56,9 @@
     line: "host    {{ item.type }}        {{ item.user }}        {{ item.net }}             scram-sha-256"
     insertafter: "^# IPv4 local connections:"
   loop:
-    - { type: 'all', user: 'all', net: '192.168.0.0/16' }
+    - { type: 'all', user: 'all', net: '{{ pg_network_subnet }}' }
     - { type: 'all', user: 'all', net: '127.0.0.1/32' }
-    - { type: 'replication', user: 'repl_user', net: '192.168.0.0/16' }
+    - { type: 'replication', user: 'repl_user', net: '{{ pg_network_subnet }}' }
     - { type: 'replication', user: 'repl_user', net: '127.0.0.1/32' }
   notify: restart postgresql
 

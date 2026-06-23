@@ -15,6 +15,9 @@ grafana_admin_password: admin123   # Grafana 管理员密码
 # --- PG VIP（Keepalived 使用） ---
 pg_vip: 192.168.222.200              # PG 虚拟 IP
 pg_vip_prefix: 24                  # VIP 子网掩码位数
+pg_network_subnet: 192.168.0.0/16  # PG 允许访问的内网网段（pg_hba 使用）
+keepalived_vrrp_id: 52             # VRRP 虚拟路由器 ID（同一网络内唯一）
+keepalived_vrrp_pass: pg_ha_vip    # VRRP 认证密码（Keepalived 对等体间共享）
 
 # --- 网络接口（部署时自动检测，如果检测失败则用此默认值） ---
 physical_interface: ""             # 留空则自动检测默认路由接口
