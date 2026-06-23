@@ -26,6 +26,7 @@
       [Service]
       Type=simple
       Environment=DINGTALK_TOKEN={{ dingtalk_token }}
+      Environment=DINGTALK_SECRET={{ dingtalk_secret }}
       ExecStart=/usr/bin/python3 /opt/monitoring/dingtalk_webhook.py
       Restart=always
       RestartSec=5

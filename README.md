@@ -51,6 +51,7 @@ nano group_vars/all.yml
 | `postgres_password` | postgres 系统用户密码 | 设一个密码 |
 | `grafana_admin_password` | Grafana 管理员密码 | 设一个密码 |
 | `dingtalk_token` | 钉钉机器人 token | 填入真实 token（留空则不发告警） |
+| `dingtalk_secret` | 钉钉机器人加签密钥 | 安全设置选"加签"时必填，留空则不签名 |
 
 示例：
 ```yaml
@@ -60,6 +61,7 @@ monitor_password: m0n1t0r
 postgres_password: p0stgr3s
 grafana_admin_password: Gr@fana2024
 dingtalk_token: "你的钉钉机器人token"
+dingtalk_secret: "你的加签密钥（选加签时才填）"
 ```
 
 #### 按实际网络改的

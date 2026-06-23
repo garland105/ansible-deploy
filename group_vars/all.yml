@@ -25,6 +25,7 @@ vm_interface: ""
 
 # --- 钉钉告警 ---
 dingtalk_token: ""                 # 钉钉机器人 token，留空则不配置告警通知
+dingtalk_secret: ""                # 钉钉机器人加签密钥（安全设置选"加签"时必填），留空则不签名
 dingtalk_enabled: false            # 钉钉告警开关
 
 # --- 监控栈 ---
