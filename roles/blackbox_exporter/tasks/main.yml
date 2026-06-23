@@ -51,6 +51,9 @@
             valid_status_codes: [200]
             method: GET
             no_follow_redirects: false
+        tcp_connect:
+          prober: tcp
+          timeout: 10s
 
 - name: "创建 Blackbox Exporter systemd 服务"
   copy:

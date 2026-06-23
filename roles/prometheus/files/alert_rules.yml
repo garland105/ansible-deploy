@@ -3,7 +3,7 @@
 # 覆盖：系统宕机/CPU/内存/磁盘/PG连接/PG复制/HTTP服务
 # ============================================================
 groups:
-  - name: mom_infra
+  - name: infra_alerts
     rules:
       # 1. 机器宕机检测
       - alert: NodeDown
@@ -42,14 +42,14 @@ groups:
         annotations:
           summary: "Disk > 85% on {{ $labels.instance }}"
 
-      # 5. HTTP 服务不可用（替换 target 为你的服务地址）
+      # 5. TCP 端口探测失败（替换 target 为你的服务地址）
       - alert: ServiceDown
-        expr: probe_success{job="blackbox_http"} == 0
+        expr: probe_success{job="blackbox_tcp"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "HTTP service is down"
+          summary: "TCP service is down"
           description: "Probe target {{ $labels.instance }} is not responding"
 
       # 6. PostgreSQL 不可达

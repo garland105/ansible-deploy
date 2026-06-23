@@ -56,9 +56,9 @@
     content: |
       apiVersion: 1
       providers:
-        - name: MOM
+        - name: Infrastructure
           orgId: 1
-          folder: 'MOM'
+          folder: 'Infrastructure'
           type: file
           disableDeletion: true
           editable: true

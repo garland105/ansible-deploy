@@ -1,12 +1,12 @@
 {
   "schemaVersion": 39,
   "version": 1,
-  "title": "MOM 系统概览",
-  "uid": "mom-system-overview",
+  "title": "系统概览",
+  "uid": "system-overview",
   "tags": [
-    "mom",
     "system",
-    "node"
+    "overview",
+    "monitor"
   ],
   "timezone": "browser",
   "refresh": "30s",

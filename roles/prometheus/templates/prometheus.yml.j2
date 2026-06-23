@@ -53,16 +53,15 @@ scrape_configs:
 {%   endif %}
 {% endfor %}
 
-  # Blackbox Exporter - HTTP 探测（监控任意 Web 服务）
-  # 使用前将 target 改为你要监控的 URL
-  - job_name: 'blackbox_http'
+  # Blackbox Exporter - TCP 探测（检查端口是否存活，可监控任意 TCP 服务）
+  - job_name: 'blackbox_tcp'
     metrics_path: /probe
     params:
-      module: [http_2xx]
+      module: [tcp_connect]
     scrape_interval: 15s
     static_configs:
       - targets:
-          - 'http://{{ pg_vip }}:5432/'   # 监控 PG VIP 的 5432 端口
+          - '{{ pg_vip }}:5432'          # 探测 PG VIP 的 5432 端口是否存活
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

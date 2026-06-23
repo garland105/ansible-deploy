@@ -1,12 +1,12 @@
 {
   "schemaVersion": 39,
   "version": 1,
-  "title": "MOM 服务状态",
-  "uid": "mom-service-status",
+  "title": "服务状态",
+  "uid": "service-status",
   "tags": [
-    "mom",
     "service",
-    "blackbox"
+    "status",
+    "monitor"
   ],
   "timezone": "browser",
   "refresh": "15s",
