@@ -15,7 +15,8 @@ all:
           ansible_user: use1
           ansible_become: true
           ansible_become_method: sudo
-          ansible_become_flags: '-H -n'
+          ansible_become_flags: '-H -S'
+          ansible_become_password: ''
           # 手工指定物理 IP（Prometheus 模板用，避免 NAT 下解析到 127.0.0.1）
           physical_ip: 192.168.222.128
 
@@ -27,7 +28,8 @@ all:
           ansible_user: user2
           ansible_become: true
           ansible_become_method: sudo
-          ansible_become_flags: '-H -n'
+          ansible_become_flags: '-H -S'
+          ansible_become_password: ''
 
     # --- PG 集群（流复制组） ---
     pg_cluster:
