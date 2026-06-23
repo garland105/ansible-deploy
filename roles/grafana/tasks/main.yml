@@ -71,6 +71,18 @@
     dest: /opt/monitoring/config/dashboards/
     mode: "0644"
 
+- name: "修复 Grafana 数据目录权限（deb 包安装后有时属主不对）"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    recurse: yes
+  loop:
+    - /var/lib/grafana
+    - /etc/grafana
+    - /opt/monitoring/config/dashboards
+
 - name: "设置 Grafana 管理员密码"
   command: >
     grafana-cli admin reset-admin-password {{ grafana_admin_password }}
