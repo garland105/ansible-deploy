@@ -11,7 +11,7 @@
 
 - name: "下载 Grafana 11.5.1 deb 包（清华镜像）"
   get_url:
-    url: "{{ download_mirror }}https://mirrors.tuna.tsinghua.edu.cn/grafana/apt/pool/main/g/grafana/grafana_11.5.1_amd64.deb"
+    url: "https://mirrors.tuna.tsinghua.edu.cn/grafana/apt/pool/main/g/grafana/grafana_11.5.1_amd64.deb"
     dest: /tmp/grafana.deb
     timeout: 120
   when: not graf_installed.stat.exists
