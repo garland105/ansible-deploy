@@ -34,12 +34,16 @@
   args:
     creates: /var/snap/etcd/common/etcd.conf.yml
 
-- name: "开启 etcd v2 API（Patroni 需要）"
+- name: "开启 etcd v2 API 并监听所有接口（Patroni 需要）"
   lineinfile:
     path: /var/snap/etcd/common/etcd.conf.yml
-    regexp: "^#?enable-v2"
-    line: "enable-v2: true"
+    regexp: "^#?{{ item.key }}"
+    line: "{{ item.key }}: {{ item.value }}"
     state: present
+  loop:
+    - { key: 'enable-v2', value: 'true' }
+    - { key: 'listen-client-urls', value: 'http://0.0.0.0:2379' }
+    - { key: 'advertise-client-urls', value: 'http://{{ ansible_default_ipv4.address }}:2379' }
   notify: restart etcd
 
 - name: "确保 etcd snap 服务已启动"
