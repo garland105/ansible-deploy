@@ -9,8 +9,8 @@
     name: keepalived
     state: present
 
-- name: "自动检测主网卡"
-  shell: "ip route get {{ pg_vip }} | grep -oP 'dev \\K\\S+'"
+- name: "自动检测主网卡（默认路由）"
+  shell: "ip route | grep '^default' | grep -oP 'dev \\K\\S+'"
   register: detected_interface
   changed_when: false
   failed_when: false
@@ -18,6 +18,10 @@
 - name: "设置网卡变量"
   set_fact:
     keepalived_interface: "{{ detected_interface.stdout if detected_interface.stdout != '' else 'eth0' }}"
+
+- name: "清理可能残留的旧 VIP（防干扰）"
+  shell: "ip addr del {{ pg_vip }}/{{ pg_vip_prefix }} dev {{ keepalived_interface }} 2>/dev/null; ip addr del {{ pg_vip }}/{{ pg_vip_prefix }} dev lo 2>/dev/null; true"
+  changed_when: false
 
 - name: "创建健康检查脚本（检测 PG 是否存活）"
   copy:
