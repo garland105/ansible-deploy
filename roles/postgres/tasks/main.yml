@@ -11,7 +11,10 @@
 
 - name: "安装 PostgreSQL 16"
   apt:
-    name: postgresql-16
+    name:
+      - postgresql-16
+      - python3-psycopg2
+      - acl
     state: present
   when: pg_installed.rc != 0
 
