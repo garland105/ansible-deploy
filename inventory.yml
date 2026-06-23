@@ -20,11 +20,11 @@ all:
           # 手工指定物理 IP（Prometheus 模板用，避免 NAT 下解析到 127.0.0.1）
           physical_ip: 192.168.222.128
 
-    # --- PG Replica + 监控中心（VM） ---
+    # --- PG Replica + 监控中心（VM - 控制节点，本地执行） ---
     vm:
       hosts:
         vm-host:
-          ansible_host: 192.168.222.129
+          ansible_connection: local
           ansible_user: user2
           ansible_become: true
           ansible_become_method: sudo
