@@ -26,11 +26,13 @@
     mode: '0755'
 
 - name: "复制 etcd 配置文件（从 sample）"
-  copy:
-    src: /var/snap/etcd/current/etcd.conf.yml.sample
-    dest: /var/snap/etcd/common/etcd.conf.yml
-    remote_src: yes
-    force: no
+  shell: |
+    SAMPLE=$(find /snap/etcd -name "etcd.conf.yml.sample" 2>/dev/null | head -1)
+    if [ -n "$SAMPLE" ]; then
+      cp "$SAMPLE" /var/snap/etcd/common/etcd.conf.yml
+    fi
+  args:
+    creates: /var/snap/etcd/common/etcd.conf.yml
 
 - name: "开启 etcd v2 API（Patroni 需要）"
   lineinfile:
