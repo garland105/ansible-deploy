@@ -61,7 +61,6 @@
     name: monitor
     password: "{{ monitor_password }}"
     role_attr_flags: LOGIN
-  when: pg_installed.rc != 0
 
 - name: "授予 monitor pg_monitor 角色"
   become: yes
