@@ -32,8 +32,8 @@
         state: directory
         mode: "0755"
 
-    - name: "创建 Python 虚拟环境"
-      command: python3 -m venv /opt/patroni/venv
+    - name: "创建 Python 虚拟环境（含系统包）"
+      command: python3 -m venv --system-site-packages /opt/patroni/venv
       args:
         creates: /opt/patroni/venv/bin/activate
 
@@ -41,7 +41,6 @@
       pip:
         name:
           - "patroni[etcd3]==4.1.3"
-          - psycopg2-binary
         virtualenv: /opt/patroni/venv
 
     - name: "让 postgres 用户能访问 venv"

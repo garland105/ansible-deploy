@@ -6,11 +6,11 @@ scope: {{ patroni_scope }}
 name: {{ patroni_node_name }}
 
 etcd:
-  host: {{ hostvars[groups['vm'][0]]['ansible_host'] }}:2379
+  host: {{ hostvars[groups['vm'][0]].get('ansible_host') or hostvars[groups['vm'][0]]['ansible_default_ipv4']['address'] }}:2379
 
 restapi:
   listen: 0.0.0.0:8008
-  connect_address: {{ ansible_host }}:8008
+  connect_address: {{ ansible_default_ipv4.address }}:8008
 
 bootstrap:
   dcs:
@@ -42,7 +42,7 @@ bootstrap:
 
 postgresql:
   listen: 0.0.0.0:5432
-  connect_address: {{ ansible_host }}:5432
+  connect_address: {{ ansible_default_ipv4.address }}:5432
   data_dir: {{ patroni_data_dir }}
   bin_dir: /usr/lib/postgresql/16/bin
   pgpass: /tmp/pgpass

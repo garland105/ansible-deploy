@@ -68,7 +68,7 @@
   become_user: postgres
   postgresql_membership:
     target_role: monitor
-    target_group: pg_monitor
+    groups: pg_monitor
   ignore_errors: yes
 
 - name: "确认 PG 监听端口"
