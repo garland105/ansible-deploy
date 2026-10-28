@@ -38,5 +38,10 @@ patroni_scope: pg_ha               # Patroni 集群名称
 patroni_node_name_physical: server
 patroni_node_name_vm: vm-standby
 
+# --- Patroni 维护开关 ---
+# false：仅当本机 Patroni 未运行时才清理 etcd 中的集群键（首次初始化场景）
+# true ：强制清理，用于集群元数据损坏后重建（会丢失选主状态，慎用）
+patroni_force_clean: false
+
 # --- 时区 ---
 timezone: Asia/Shanghai
