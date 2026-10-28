@@ -1,16 +1,21 @@
 # ============================================================
 # site.yml - 入口剧本，一次性部署全部组件
+# 顺序: 系统初始化 → PG 高可用 → 监控栈 → 告警与 VIP
 # 用法: ansible-playbook -i inventory.yml site.yml
 # 也可单独运行子剧本:
 #   ansible-playbook -i inventory.yml common.yml      # 仅系统初始化
+#   ansible-playbook -i inventory.yml pg-patroni.yml   # 仅 PG 高可用
 #   ansible-playbook -i inventory.yml monitoring.yml   # 仅监控栈
 #   ansible-playbook -i inventory.yml alerting.yml     # 仅告警+HA
 # ============================================================
 - name: "阶段 1 - 系统初始化（所有机器）"
   import_playbook: common.yml
 
-- name: "阶段 2 - 监控栈部署"
+- name: "阶段 2 - PG 高可用（PG16 + etcd + Patroni）"
+  import_playbook: pg-patroni.yml
+
+- name: "阶段 3 - 监控栈部署"
   import_playbook: monitoring.yml
 
-- name: "阶段 3 - 告警与高可用"
+- name: "阶段 4 - 告警与高可用"
   import_playbook: alerting.yml
