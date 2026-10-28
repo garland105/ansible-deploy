@@ -17,9 +17,17 @@
     state: present
   when: pat_installed.rc != 0
 
-# --- 第二步：清理旧集群状态 ---
-# 如果 etcd 中存在旧集群数据（系统ID不匹配），Patroni 会启动失败
-# 必须在首次启动前清理干净
+# --- 第二步：清理旧集群状态（仅首次初始化） ---
+# 旧集群数据（系统ID不匹配）会导致 Patroni 启动失败，首次部署前必须清理；
+# 但集群健康时重跑本剧本不能清理，否则会抹掉 DCS 中的选主状态。
+# 判据：本机 Patroni 是否已在运行；需要强制重建时置 patroni_force_clean=true。
+- name: "检查本机 Patroni 服务是否已在运行"
+  command: systemctl is-active patroni
+  register: patroni_svc_active
+  failed_when: false
+  changed_when: false
+  run_once: yes
+
 - name: "检查 etcd 中是否有旧集群数据"
   uri:
     url: "http://{{ hostvars[groups['vm'][0]].get('ansible_host') or hostvars[groups['vm'][0]]['ansible_default_ipv4']['address'] }}:2379/v2/keys/service/{{ patroni_scope }}"
@@ -29,11 +37,13 @@
   ignore_errors: yes
   run_once: yes
 
-- name: "清理 etcd 中的旧集群数据（降低 TTL 让旧数据过期）"
+- name: "清理 etcd 中的旧集群数据（仅首次初始化或显式强制）"
   uri:
     url: "http://{{ hostvars[groups['vm'][0]].get('ansible_host') or hostvars[groups['vm'][0]]['ansible_default_ipv4']['address'] }}:2379/v2/keys/service/{{ patroni_scope }}?recursive=true"
     method: DELETE
-  when: etcd_cluster_check.status == 200
+  when:
+    - etcd_cluster_check.status == 200
+    - patroni_force_clean | default(false) | bool or (patroni_svc_active.stdout | default('')) != 'active'
   run_once: yes
   ignore_errors: yes
 
