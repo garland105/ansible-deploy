@@ -2,8 +2,8 @@
 
 ## 文件统计
 - **总数**: 36 个文件
-- **角色**: 11 个 (common, postgres, etcd, patroni, node_exporter, pg_exporter, blackbox_exporter, prometheus, alertmanager, grafana, dingtalk, keepalived)
-- **Playbook**: 5 个 (site.yml, common.yml, monitoring.yml, alerting.yml, pg-patroni.yml)
+- **角色**: 12 个 (common, postgres, etcd, patroni, node_exporter, pg_exporter, blackbox_exporter, prometheus, alertmanager, grafana, dingtalk, keepalived)
+- **Playbook**: 5 个 (site.yml, common.yml, pg-patroni.yml, monitoring.yml, alerting.yml)
 
 ## 快速使用
 
@@ -21,13 +21,14 @@ bash ansible-deploy/install_ansible.sh
 
 ### 3. 部署
 ```bash
-# 一键全部部署
+# 一键全部部署（含 PG 高可用）
 ansible-playbook -i inventory.yml site.yml
 
 # 或分步部署（推荐首次使用）
 ansible-playbook -i inventory.yml common.yml          # 系统初始化
-ansible-playbook -i inventory.yml monitoring.yml        # 监控栈
-ansible-playbook -i inventory.yml alerting.yml          # 告警+HA
+ansible-playbook -i inventory.yml pg-patroni.yml      # PG 高可用
+ansible-playbook -i inventory.yml monitoring.yml      # 监控栈
+ansible-playbook -i inventory.yml alerting.yml        # 告警+HA
 ```
 
 ## 部署后的成果
