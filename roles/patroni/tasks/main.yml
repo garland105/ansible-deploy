@@ -120,13 +120,16 @@
 
       [Install]
       WantedBy=multi-user.target
+  notify: restart patroni
 
-- name: "启动 Patroni"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 Patroni 已启动并开机自启"
   systemd:
     name: patroni
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 Patroni 就绪（PG 端口 5432）- 最长 120 秒"
   wait_for:

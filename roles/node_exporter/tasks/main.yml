@@ -78,13 +78,16 @@
       [Install]
       WantedBy=multi-user.target
   when: not ne_installed.stat.exists
+  notify: restart node_exporter
 
-- name: "重新加载 systemd 并启动 Node Exporter"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 Node Exporter 已启动并开机自启"
   systemd:
     name: node_exporter
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 Node Exporter 端口就绪"
   wait_for:

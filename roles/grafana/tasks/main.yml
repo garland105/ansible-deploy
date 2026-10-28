@@ -49,6 +49,7 @@
           url: http://localhost:9090
           isDefault: true
           editable: false
+  notify: restart grafana
 
 - name: "配置 Dashboard 自动加载"
   copy:
@@ -64,6 +65,7 @@
           editable: true
           options:
             path: /opt/monitoring/config/dashboards
+  notify: restart grafana
 
 - name: "复制 3 张 Dashboard JSON 到 Grafana"
   copy:
@@ -83,17 +85,21 @@
     - /etc/grafana
     - /opt/monitoring/config/dashboards
 
-- name: "设置 Grafana 管理员密码"
+- name: "设置 Grafana 管理员密码（仅首次安装时执行，避免覆盖已改密码）"
   command: >
     grafana-cli admin reset-admin-password {{ grafana_admin_password }}
+  when: not graf_installed.stat.exists
+  changed_when: false
   ignore_errors: yes
 
-- name: "启动 Grafana 服务"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 Grafana 已启动并开机自启"
   systemd:
     name: grafana-server
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 Grafana 端口就绪"
   wait_for:

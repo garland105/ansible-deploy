@@ -71,13 +71,16 @@
 
       [Install]
       WantedBy=multi-user.target
+  notify: restart alertmanager
 
-- name: "重新加载 systemd 并启动 Alertmanager"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 Alertmanager 已启动并开机自启"
   systemd:
     name: alertmanager
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 Alertmanager 端口就绪"
   wait_for:

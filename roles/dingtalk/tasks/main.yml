@@ -14,6 +14,7 @@
     src: dingtalk_webhook.py
     dest: /opt/monitoring/dingtalk_webhook.py
     mode: "0755"
+  notify: restart dingtalk
 
 - name: "创建 DingTalk systemd 服务"
   copy:
@@ -33,13 +34,16 @@
 
       [Install]
       WantedBy=multi-user.target
+  notify: restart dingtalk
 
-- name: "启动 DingTalk 服务"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 DingTalk Webhook 已启动并开机自启"
   systemd:
     name: dingtalk-webhook
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 DingTalk 端口就绪"
   wait_for:

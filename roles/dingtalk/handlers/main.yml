@@ -1,0 +1,7 @@
+# handlers file for dingtalk role
+---
+- name: restart dingtalk
+  systemd:
+    name: dingtalk-webhook
+    state: restarted
+    daemon_reload: yes

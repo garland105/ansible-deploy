@@ -32,6 +32,7 @@
       PGPASSWORD={{ pg_admin_password }} psql -h 127.0.0.1 -U admin -d postgres -c "SELECT 1" > /dev/null 2>&1
       exit $?
     mode: "0755"
+  notify: restart keepalived
 
 - name: "配置 Keepalived（Leader 优先）"
   copy:
@@ -68,13 +69,16 @@
               chk_pg
           }
       }
+  notify: restart keepalived
 
-- name: "启动 Keepalived"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 Keepalived 已启动并开机自启"
   systemd:
     name: keepalived
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 VIP 绑定"
   wait_for:

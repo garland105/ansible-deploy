@@ -71,13 +71,16 @@
 
       [Install]
       WantedBy=multi-user.target
+  notify: restart pg_exporter
 
-- name: "重新加载 systemd 并启动 PG Exporter"
+- name: "应用变更（立即执行 restart handler）"
+  meta: flush_handlers
+
+- name: "确保 PG Exporter 已启动并开机自启"
   systemd:
     name: postgres_exporter
-    state: restarted
+    state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: "等待 PG Exporter 端口就绪"
   wait_for:
