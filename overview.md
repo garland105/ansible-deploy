@@ -1,7 +1,7 @@
 # Ansible Deployment Framework — Project Overview
 
 ## 文件统计
-- **总数**: 46 个文件
+- **总数**: 45 个文件
 - **角色**: 12 个 (common, postgres, etcd, patroni, node_exporter, pg_exporter, blackbox_exporter, prometheus, alertmanager, grafana, dingtalk, keepalived)
 - **Playbook**: 5 个 (site.yml, common.yml, pg-patroni.yml, monitoring.yml, alerting.yml)
 
@@ -44,7 +44,7 @@ ansible-playbook -i inventory.yml alerting.yml        # 告警+HA
 | Keepalived PG VIP | 两台机器 | VIP 自动指向 Leader |
 
 ## 可带走的部分
-✅ 全部 46 个配置文件、脚本、模板
+✅ 全部 45 个配置文件、脚本、模板
 ✅ 3 张 Grafana Dashboard JSON
 ✅ 8 条 Prometheus 告警规则
 ✅ DingTalk Webhook 桥脚本

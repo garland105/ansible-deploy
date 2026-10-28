@@ -125,7 +125,7 @@ ansible-playbook -i inventory.yml alerting.yml      # 告警 + HA
 | Grafana | `http://VM_IP:3000`（3 张预置 Dashboard） |
 | Prometheus 目标 | `http://VM_IP:9090/targets`（6 个抓取目标） |
 | 钉钉告警 | 停掉一个 Exporter，1 分钟后钉钉收到通知 |
-| Keepalived VIP | `ip a \| grep <VIP>` |
+| Keepalived VIP | `ip a \| grep <VIP>`（仅主库节点持有，备库为 recovery 时不持有） |
 
 ## 前置条件
 

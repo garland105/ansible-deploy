@@ -33,7 +33,7 @@ scrape_configs:
 {%   elif h.ansible_default_ipv4 is defined and h.ansible_default_ipv4.address != '127.0.0.1' %}
           - '{{ h.ansible_default_ipv4.address }}:9100'
 {%   else %}
-          - '{{ h.ansible_host }}:9100'
+          - '{{ h.ansible_host | default(host) }}:9100'
 {%   endif %}
 {% endfor %}
 
@@ -49,7 +49,7 @@ scrape_configs:
 {%   elif h.ansible_default_ipv4 is defined and h.ansible_default_ipv4.address != '127.0.0.1' %}
           - '{{ h.ansible_default_ipv4.address }}:9187'
 {%   else %}
-          - '{{ h.ansible_host }}:9187'
+          - '{{ h.ansible_host | default(host) }}:9187'
 {%   endif %}
 {% endfor %}
 

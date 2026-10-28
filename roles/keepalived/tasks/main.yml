@@ -28,9 +28,11 @@
     dest: /etc/keepalived/check_pg.sh
     content: |
       #!/bin/bash
-      # 检查本地 PG 是否可连
-      PGPASSWORD={{ pg_admin_password }} psql -h 127.0.0.1 -U admin -d postgres -c "SELECT 1" > /dev/null 2>&1
-      exit $?
+      # 仅当本机 PG 可连、且处于主库（非 recovery）状态时返回 0
+      # 只读备库同样能建立连接，必须判断 recovery 状态，否则备库也会持有 VIP
+      OUT=$(PGPASSWORD={{ pg_admin_password }} psql -h 127.0.0.1 -U admin -d postgres \
+            -tAc "SELECT NOT pg_is_in_recovery()" 2>/dev/null)
+      [ "$OUT" = "t" ]
     mode: "0755"
   notify: restart keepalived
 
@@ -50,6 +52,9 @@
           timeout 3
           fall 2
           rise 2
+          # 负权重：检查失败时只扣优先级，不进入 FAULT
+          # 若保持默认 weight 0，备库会因「非主库」被判 FAULT，主库宕机时无法接管 VIP
+          weight -60
       }
 
       vrrp_instance VI_PG {
@@ -80,12 +85,12 @@
     state: started
     enabled: yes
 
-- name: "等待 VIP 绑定"
-  wait_for:
-    timeout: 5
-  when: patroni_role == 'leader'
-
-- name: "验证 VIP 是否绑定（Leader 上应有 VIP）"
-  shell: "ip a | grep {{ pg_vip }} || echo 'VIP not on this node'"
+- name: "轮询确认 VIP 已绑定到本地网卡（仅初始 Leader 校验）"
+  shell: "ip -4 -o addr show dev {{ keepalived_interface }} | grep -q '{{ pg_vip }}/'"
   register: vip_check
+  until: vip_check.rc == 0
+  retries: 15
+  delay: 1
   changed_when: false
+  failed_when: false
+  when: patroni_role == 'leader'
